@@ -36,7 +36,7 @@ variable "create_domain_mapping" {
 variable "enable_load_balancer" {
   description = "Front Cloud Run with a global external HTTPS load balancer + managed cert, and restrict Cloud Run ingress to load-balancer traffic only."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "deploy_service_account" {
