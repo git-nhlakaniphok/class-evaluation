@@ -12,6 +12,16 @@ locals {
     "roles/iam.serviceAccountUser",
     "roles/secretmanager.admin",
   ])
+
+  # Parse database connection string: postgresql://user:password@host:port/database
+  # Named groups: user, password, host, port, database
+  db_parts = regex("^postgresql://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/:]+)(?::(?P<port>[0-9]+))?/(?P<database>[^?]+)", var.db_connection_string)
+
+  db_user     = local.db_parts["user"]
+  db_password = local.db_parts["password"]
+  db_host     = local.db_parts["host"]
+  db_port     = lookup(local.db_parts, "port", null) != "" && lookup(local.db_parts, "port", null) != null ? local.db_parts["port"] : "5432"
+  db_database = local.db_parts["database"]
 }
 
 data "google_project" "project" {}
@@ -31,10 +41,10 @@ resource "google_service_account" "n8n_run" {
   display_name = "Runtime SA for ${var.service_name}"
 }
 
-# --- Secret Manager Setup for Database connection string ---
-resource "google_secret_manager_secret" "db_connection_string" {
+# --- Secret Manager Setup for Database Password ---
+resource "google_secret_manager_secret" "db_password" {
   project   = var.project_id
-  secret_id = "${var.service_name}-db-connection-string"
+  secret_id = "${var.service_name}-db-password"
   labels    = var.labels
 
   replication {
@@ -44,9 +54,9 @@ resource "google_secret_manager_secret" "db_connection_string" {
   depends_on = [google_project_service.apis]
 }
 
-resource "google_secret_manager_secret_version" "db_connection_string" {
-  secret      = google_secret_manager_secret.db_connection_string.id
-  secret_data = var.db_connection_string
+resource "google_secret_manager_secret_version" "db_password" {
+  secret      = google_secret_manager_secret.db_password.id
+  secret_data = local.db_password
 }
 
 # --- Secret Manager Setup for n8n Encryption Key ---
@@ -73,8 +83,8 @@ resource "google_secret_manager_secret_version" "n8n_encryption_key" {
 }
 
 # --- IAM permissions for Runtime SA to read secrets ---
-resource "google_secret_manager_secret_iam_member" "n8n_run_db_secret" {
-  secret_id = google_secret_manager_secret.db_connection_string.id
+resource "google_secret_manager_secret_iam_member" "n8n_run_db_password_secret" {
+  secret_id = google_secret_manager_secret.db_password.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.n8n_run.email}"
 }
@@ -115,17 +125,37 @@ resource "google_cloud_run_v2_service" "this" {
         }
       }
 
-      # Database Configuration
+      # Database Configuration (Postgresdb)
       env {
         name  = "DB_TYPE"
         value = "postgresdb"
       }
 
       env {
-        name = "DB_POSTGRESDB_CONNECTION_STRING"
+        name  = "DB_POSTGRESDB_HOST"
+        value = local.db_host
+      }
+
+      env {
+        name  = "DB_POSTGRESDB_PORT"
+        value = local.db_port
+      }
+
+      env {
+        name  = "DB_POSTGRESDB_USER"
+        value = local.db_user
+      }
+
+      env {
+        name  = "DB_POSTGRESDB_DATABASE"
+        value = local.db_database
+      }
+
+      env {
+        name = "DB_POSTGRESDB_PASSWORD"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.db_connection_string.secret_id
+            secret  = google_secret_manager_secret.db_password.secret_id
             version = "latest"
           }
         }
@@ -189,9 +219,9 @@ resource "google_cloud_run_v2_service" "this" {
 
   depends_on = [
     google_project_service.apis,
-    google_secret_manager_secret_version.db_connection_string,
+    google_secret_manager_secret_version.db_password,
     google_secret_manager_secret_version.n8n_encryption_key,
-    google_secret_manager_secret_iam_member.n8n_run_db_secret,
+    google_secret_manager_secret_iam_member.n8n_run_db_password_secret,
     google_secret_manager_secret_iam_member.n8n_run_enc_key_secret
   ]
 }
