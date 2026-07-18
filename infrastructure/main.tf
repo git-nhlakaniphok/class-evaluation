@@ -125,6 +125,16 @@ resource "google_cloud_run_v2_service" "this" {
         }
       }
 
+      startup_probe {
+        timeout_seconds   = 5
+        period_seconds    = 5
+        failure_threshold = 24 # 2 minutes max startup limit for migrations
+        http_get {
+          path = "/health"
+          port = 5678
+        }
+      }
+
       # Database Configuration (Postgresdb)
       env {
         name  = "DB_TYPE"
