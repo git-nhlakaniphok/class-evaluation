@@ -12,7 +12,7 @@ variable "region" {
 variable "service_name" {
   description = "Name of the Cloud Run service."
   type        = string
-  default     = "n8n"
+  default     = "lunge-n8n"
 }
 
 variable "db_connection_string" {
