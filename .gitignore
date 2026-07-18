@@ -1,0 +1,27 @@
+# OS Files
+.DS_Store
+# Local Terraform directories and files
+.terraform/
+.terraform.tfstate.lock.info
+**/.terraform/
+**/.terraform.tfstate.lock.info
+
+# State files
+*.tfstate
+*.tfstate.*
+/**/*.tfstate
+/**/*.tfstate.*
+
+# Variable files with secrets (DO NOT COMMIT)
+terraform.tfvars
+*.auto.tfvars
+**/terraform.tfvars
+**/*.auto.tfvars
+
+# Crash logs
+crash.log
+crash.*.log
+**/crash.log
+**/crash.*.log
+
+.antigravity*

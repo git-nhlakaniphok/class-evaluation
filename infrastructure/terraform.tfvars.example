@@ -1,0 +1,9 @@
+project_id             = "your-gcp-project-id"
+region                 = "europe-west1"
+service_name           = "lunge-n8n"
+domain_name            = "evaluations.lunge.co.za"
+create_domain_mapping  = true
+deploy_service_account = "your-deploy-sa@your-gcp-project-id.iam.gserviceaccount.com"
+github_repository      = "username/repository-name"
+
+db_connection_string   = "postgresql://neondb_owner:password@endpoint-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"

@@ -1,0 +1,47 @@
+name: Deploy n8n Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      n8n_version:
+        description: 'n8n Docker Image Tag to deploy (e.g. latest, 1.50.1)'
+        required: true
+        default: 'latest'
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Update Cloud Run Service
+    runs-on: ubuntu-latest
+    environment: dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Update to Cloud Run
+        run: |
+          gcloud run deploy "lunge-n8n" \
+            --image "docker.io/n8nio/n8n:${{ github.event.inputs.n8n_version }}" \
+            --region "${{ secrets.GCP_REGION }}" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --platform managed \
+            --quiet
