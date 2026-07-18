@@ -30,10 +30,14 @@ resource "google_compute_managed_ssl_certificate" "lb" {
   count = var.enable_load_balancer ? 1 : 0
 
   project = var.project_id
-  name    = "${var.service_name}-cert"
+  name    = "${var.service_name}-ssl-cert"
 
   managed {
     domains = [var.domain_name]
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
