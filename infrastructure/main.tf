@@ -184,6 +184,11 @@ resource "google_cloud_run_v2_service" "this" {
       }
 
       env {
+        name  = "N8N_PROTOCOL"
+        value = "https"
+      }
+
+      env {
         name  = "N8N_WEBHOOK_URL"
         value = "https://${var.domain_name}/"
       }
@@ -264,4 +269,11 @@ resource "google_cloud_run_domain_mapping" "this" {
   spec {
     route_name = google_cloud_run_v2_service.this.name
   }
+}
+
+# --- Grant Storage Object Viewer to the n8n Cloud Run Service Account ---
+resource "google_project_iam_member" "n8n_run_storage_viewer" {
+  project = var.project_id
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.n8n_run.email}"
 }
