@@ -30,7 +30,7 @@ variable "domain_name" {
 variable "create_domain_mapping" {
   description = "Whether to create the Cloud Run domain mapping. Requires domain verification beforehand."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "deploy_service_account" {
