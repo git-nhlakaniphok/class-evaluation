@@ -101,7 +101,7 @@ resource "google_cloud_run_v2_service" "this" {
   name                = var.service_name
   location            = var.region
   deletion_protection = false
-  ingress             = "INGRESS_TRAFFIC_ALL"
+  ingress             = var.enable_load_balancer ? "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" : "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account = google_service_account.n8n_run.email
